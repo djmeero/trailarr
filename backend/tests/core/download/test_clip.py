@@ -57,6 +57,39 @@ def test_is_valid_clip_url_accepts_http(url):
     assert clip_mod.is_valid_clip_url(url) is True
 
 
+def test_build_ytdlp_error_login_required():
+    from subprocess import CompletedProcess
+
+    stderr = (
+        "[TikTok] Extracting URL: https://...\n"
+        "ERROR: [TikTok] 7649: TikTok is requiring login for access to this"
+        " content. Use --cookies-from-browser or --cookies.\n"
+    )
+    result = CompletedProcess(args=[], returncode=1, stdout="", stderr=stderr)
+    msg = clip_mod._build_ytdlp_error(result)
+    assert "requires login" in msg.lower()
+    assert "cookies" in msg.lower()
+    assert "requiring login" in msg.lower()  # the real yt-dlp line is included
+
+
+def test_build_ytdlp_error_generic():
+    from subprocess import CompletedProcess
+
+    stderr = "ERROR: Unable to download webpage: HTTP Error 404: Not Found\n"
+    result = CompletedProcess(args=[], returncode=1, stdout="", stderr=stderr)
+    msg = clip_mod._build_ytdlp_error(result)
+    assert "404" in msg
+    assert "yt-dlp error" in msg.lower()
+
+
+def test_build_ytdlp_error_no_error_line():
+    from subprocess import CompletedProcess
+
+    result = CompletedProcess(args=[], returncode=2, stdout="", stderr="")
+    msg = clip_mod._build_ytdlp_error(result)
+    assert "exit 2" in msg
+
+
 @pytest.mark.parametrize(
     "url",
     [

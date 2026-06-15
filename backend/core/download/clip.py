@@ -83,6 +83,40 @@ def build_clip_path(
 # -------------------------------------------------------------------
 
 
+def _build_ytdlp_error(result: subprocess.CompletedProcess) -> str:
+    """Build a human-readable failure message from a failed yt-dlp run.
+
+    Surfaces the actual ``ERROR:`` line yt-dlp printed (so the Tasks UI shows
+    the real reason, not just "exit 1"), and gives a clear hint when the site
+    requires authentication.
+    """
+    stderr = result.stderr or ""
+    # The last "ERROR:" line is usually the most relevant.
+    err_line = ""
+    for line in stderr.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("ERROR:"):
+            err_line = stripped[len("ERROR:"):].strip()
+
+    low = stderr.lower()
+    needs_auth = any(
+        kw in low
+        for kw in ("login", "log in", "sign in", "requiring login", "cookies")
+    )
+    if needs_auth:
+        msg = (
+            "This clip requires login. Add a yt-dlp cookies file (Settings →"
+            " Yt-dlp Cookies Path, or the YT_COOKIES_PATH env var) for the"
+            " source site and try again."
+        )
+        if err_line:
+            msg += f" [{err_line}]"
+        return msg
+    if err_line:
+        return f"yt-dlp error: {err_line}"
+    return f"yt-dlp failed for clip: exit {result.returncode}"
+
+
 def _download_clip_file(
     url: str,
     temp_out: str,
@@ -137,11 +171,9 @@ def _download_clip_file(
 
     if result.returncode != 0:
         out = (result.stdout or "") + (result.stderr or "")
-        stderr_lower = (result.stderr or "").lower()
-        msg = f"yt-dlp failed for clip: exit {result.returncode}"
-        if "sign in" in stderr_lower or "log in" in stderr_lower:
-            msg = "Sign in / login required to download this clip"
-        raise DownloadFailedError(msg, output=out)
+        # Always log the full yt-dlp output so failures are diagnosable.
+        logger.error(f"yt-dlp failed for clip ({url}):\n{out}")
+        raise DownloadFailedError(_build_ytdlp_error(result), output=out)
 
     info: dict = {}
     try:
