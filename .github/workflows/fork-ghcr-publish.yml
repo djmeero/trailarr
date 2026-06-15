@@ -10,6 +10,11 @@ on:
   push:
     branches:
       - 'main'
+    tags:
+      # Any git tag (e.g. clips-v1, clips-v2, v0.9.7-clips.3) produces an
+      # immutable image tag of the same name, so TrueNAS always pulls a
+      # genuinely new image instead of a cached :main/:latest.
+      - '*'
   workflow_dispatch: {}
 
 env:
@@ -50,6 +55,7 @@ jobs:
           images: ${{ steps.image.outputs.name }}
           tags: |
             type=ref,event=branch
+            type=ref,event=tag
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
 
