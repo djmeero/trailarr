@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 
 from api.v1.auth import auth_router
 from api.v1.authentication import validate_api_key
+from api.v1.clips import clips_router, media_clips_router
 from api.v1.connections import connections_router
 from api.v1.customfilters import customfilters_router
 from api.v1.events import events_router
@@ -34,6 +35,8 @@ authenticated_router = APIRouter(
         }
     },
 )
+authenticated_router.include_router(clips_router)
+authenticated_router.include_router(media_clips_router)
 authenticated_router.include_router(connections_router)
 authenticated_router.include_router(customfilters_router)
 authenticated_router.include_router(events_router)

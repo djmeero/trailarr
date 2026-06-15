@@ -91,13 +91,13 @@ class TestConnectionDatabaseHandler:
 
     @pytest.mark.asyncio
     async def test_read_connection(self):
-        # Call the create_connection method and assert the return value
-        await db_manager.create(connection)
-        # self.test_create_connection()
+        # Capture the created id — the shared session DB may already hold
+        # other connections, so we can't assume the new row is id=1.
+        _msg, conn_id = await db_manager.create(connection)
 
         # Call the read_connection method and assert the return values match
-        result = db_manager.read(CONN_ID_1)
-        assert result.id == CONN_ID_1
+        result = db_manager.read(conn_id)
+        assert result.id == conn_id
         assert result.name == connection.name
         assert result.arr_type == connection.arr_type
         assert result.url == connection.url
@@ -127,16 +127,17 @@ class TestConnectionDatabaseHandler:
 
     @pytest.mark.asyncio
     async def test_update_connection(self):
-        # Call the create_connection method and assert the return value
-        await self.test_create_connection()
+        # Capture the created id — the shared session DB may already hold
+        # other connections, so we can't assume the new row is id=1.
+        _msg, conn_id = await db_manager.create(connection)
 
         # Call the update_connection method and assert the return value
-        update_result = await db_manager.update(CONN_ID_1, connection_update)
+        update_result = await db_manager.update(conn_id, connection_update)
         # assert update_result == UPDATE_SUCCESS_MESSAGE
 
         # Call the read_connection method and assert the return values match
-        # update_result = db_manager.read(CONN_ID_1)
-        assert update_result.id == CONN_ID_1
+        # update_result = db_manager.read(conn_id)
+        assert update_result.id == conn_id
         assert update_result.name == connection.name
         assert update_result.arr_type == connection.arr_type
         assert update_result.url == connection.url
