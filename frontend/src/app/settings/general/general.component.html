@@ -127,6 +127,20 @@
         (onSubmit)="updateSetting('yt_cookies_path', $event)"
       />
       <app-text-setting
+        name="Clips Directory"
+        description="Directory where downloaded clips are stored."
+        descriptionExtra="Leave empty to use <APP_DATA_DIR>/clips."
+        [isNumberType]="false"
+        [isLongInput]="true"
+        [showFolderButton]="true"
+        placeholder="/config/clips"
+        autocomplete="off"
+        [minLength]="0"
+        [maxLength]="255"
+        [value]="settings()?.clips_dir ?? ''"
+        (onSubmit)="updateSetting('clips_dir', $event)"
+      />
+      <app-text-setting
         name="Ffmpeg Timeout"
         description="Ffmpeg timeout (in minutes) used for converting downloaded video files"
         descriptionExtra="Default is 15. Minimum is 10. Maximum is 300. Container restart required to apply new interval."

@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, Component, computed, inject, signal} from '@angular/core';
 import {NavigationEnd, Router, RouterLink, RouterLinkActive} from '@angular/router';
-import {RouteEvents, RouteHome, RouteLogs, RouteMedia, RouteMovies, RouteSeries, RouteSettings, RouteTasks} from 'src/routing';
+import {RouteClips, RouteEvents, RouteHome, RouteLogs, RouteMedia, RouteMovies, RouteSeries, RouteSettings, RouteTasks} from 'src/routing';
 
 @Component({
   selector: 'app-sidenav',
@@ -10,6 +10,7 @@ import {RouteEvents, RouteHome, RouteLogs, RouteMedia, RouteMovies, RouteSeries,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidenavComponent {
+  protected readonly RouteClips = RouteClips;
   protected readonly RouteEvents = RouteEvents;
   protected readonly RouteHome = RouteHome;
   protected readonly RouteLogs = RouteLogs;

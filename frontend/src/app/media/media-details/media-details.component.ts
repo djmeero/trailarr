@@ -12,6 +12,7 @@ import {DurationConvertPipe} from '../../helpers/duration-pipe';
 import {MediaService} from '../../services/media.service';
 import {WebsocketService} from '../../services/websocket.service';
 import {ProfileSelectDialogComponent} from '../dialogs/profile-select-dialog/profile-select-dialog.component';
+import {ClipsComponent} from './clips/clips.component';
 import {DownloadsComponent} from './downloads/downloads.component';
 import {FilesComponent} from './files/files.component';
 import {MediaEventsComponent} from './media-events/media-events.component';
@@ -19,6 +20,7 @@ import {MediaEventsComponent} from './media-events/media-events.component';
 @Component({
   selector: 'app-media-details',
   imports: [
+    ClipsComponent,
     CopyToClipboardDirective,
     DownloadsComponent,
     DurationConvertPipe,

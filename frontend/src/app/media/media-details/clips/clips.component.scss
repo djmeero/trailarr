@@ -1,0 +1,179 @@
+.clips-section {
+  padding: 1rem;
+
+  .title-block {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+  }
+
+  .clip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    background-color: var(--color-secondary-container);
+    color: var(--color-on-secondary-container);
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--color-outline-variant);
+    margin: 0.75rem 0;
+  }
+}
+
+.clip-add {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  .clip-url-input {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--color-outline);
+    border-radius: 0.625rem;
+    background-color: var(--color-surface-container-low);
+    color: var(--color-on-surface);
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent);
+    }
+  }
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border: none;
+  border-radius: 0.625rem;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-primary) 85%, black);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: currentColor;
+  }
+}
+
+.clips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.clip-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-container);
+
+  .clip-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .clip-title {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .clip-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--color-on-surface-variant);
+  }
+
+  .source-badge {
+    text-transform: capitalize;
+  }
+
+  .meta-separator {
+    color: var(--color-outline);
+  }
+
+  .clip-date {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--color-outline);
+  }
+}
+
+.clip-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.clip-link,
+.icononly-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+
+  svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: currentColor;
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+}
+
+.icononly-button.danger:hover {
+  background-color: color-mix(in srgb, var(--color-danger) 20%, transparent);
+  color: var(--color-danger);
+}
+
+.no-clips {
+  padding: 0.5rem 0;
+  color: var(--color-on-surface-variant);
+  font-size: 0.9rem;
+}

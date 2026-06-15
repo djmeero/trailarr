@@ -1,0 +1,74 @@
+<div class="clips-page">
+  <div class="page-header">
+    <h2 class="page-title">Clips</h2>
+    <div class="empty-space"></div>
+    <form class="clips-search-form" (ngSubmit)="$event.preventDefault()">
+      <input
+        type="search"
+        autocomplete="off"
+        name="query"
+        placeholder="Search clips..."
+        aria-label="filter clips"
+        [ngModel]="search()"
+        (ngModelChange)="onSearchChange($event)"
+      />
+    </form>
+    <button class="header-button" title="Refresh" [class.loading]="isLoading()" (click)="loadClips()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+        <path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="clips-content">
+    @if (filteredClips().length > 0) {
+      <div class="clips-list">
+        @for (clip of filteredClips(); track clip.id) {
+          <div class="clip-card">
+            <div class="clip-info">
+              <a class="clip-media-title" [routerLink]="['/' + RouteMedia, clip.media_id]">{{ mediaTitle(clip.media_id) }}</a>
+              <h4 class="clip-title">{{ clip.file_name }}</h4>
+              <div class="clip-meta">
+                @if (clip.source && clip.source !== 'unknown') {
+                  <span class="meta-item source-badge">{{ clip.source }}</span>
+                  <span class="meta-separator">•</span>
+                }
+                @if (clip.resolution) {
+                  <span class="meta-item">{{ clip.resolution }}p</span>
+                  <span class="meta-separator">•</span>
+                }
+                <span class="meta-item">{{ clip.size | fileSize }}</span>
+                @if (clip.duration) {
+                  <span class="meta-separator">•</span>
+                  <span class="meta-item">{{ clip.duration | durationSecondsConvert }}</span>
+                }
+                <span class="meta-separator">•</span>
+                <span class="meta-item">{{ clip.downloaded_at | date }}</span>
+              </div>
+            </div>
+            <div class="clip-actions">
+              <a [href]="clip.url" target="_blank" rel="noopener" class="icononly-button" title="Open source URL">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                  <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z" />
+                </svg>
+              </a>
+              <button type="button" class="icononly-button danger" (click)="deleteClip(clip)" title="Delete clip">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                  <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (!isLoading()) {
+      <div class="no-clips">
+        @if (search().trim()) {
+          <p>No clips match your search.</p>
+        } @else {
+          <p>No clips yet. Open a movie or series and paste a clip URL to download one.</p>
+        }
+      </div>
+    }
+  </div>
+</div>

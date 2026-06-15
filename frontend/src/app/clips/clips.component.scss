@@ -1,0 +1,178 @@
+.clips-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  position: sticky;
+  top: calc(76px + 0.5rem);
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-container);
+  box-shadow: var(--shadow-level2);
+
+  .page-title {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .empty-space {
+    flex: 1;
+  }
+}
+
+.clips-search-form input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-outline);
+  border-radius: 0.625rem;
+  background-color: var(--color-surface-container-low);
+  color: var(--color-on-surface);
+  font-size: 0.9rem;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  }
+}
+
+.header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+  }
+
+  &:hover {
+    background-color: var(--color-surface-container-highest);
+  }
+
+  &.loading svg {
+    animation: clip-spin 1s linear infinite;
+  }
+}
+
+@keyframes clip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.clips-content {
+  padding: 0.5rem;
+}
+
+.clips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.clip-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 0.75rem;
+  background-color: var(--color-surface-container);
+
+  .clip-info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .clip-media-title {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    margin-bottom: 0.15rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .clip-title {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .clip-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--color-on-surface-variant);
+  }
+
+  .source-badge {
+    text-transform: capitalize;
+  }
+
+  .meta-separator {
+    color: var(--color-outline);
+  }
+}
+
+.clip-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.icononly-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background-color: transparent;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+
+  svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    fill: currentColor;
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+
+  &.danger:hover {
+    background-color: color-mix(in srgb, var(--color-danger) 20%, transparent);
+    color: var(--color-danger);
+  }
+}
+
+.no-clips {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-on-surface-variant);
+}

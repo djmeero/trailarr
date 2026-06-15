@@ -1,5 +1,6 @@
 export const RouteAbout = 'about';
 export const RouteAdd = 'add';
+export const RouteClips = 'clips';
 export const RouteConnections = 'connections';
 export const RouteEdit = 'edit';
 export const RouteEvents = 'events';

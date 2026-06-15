@@ -1,6 +1,7 @@
 export const environment = {
   production: true,
   apiUrl: 'api/v1/',
+  clips: 'clips/',
   customfilters: 'customfilters/',
   connections: 'connections/',
   files: 'files/',

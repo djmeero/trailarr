@@ -1,0 +1,72 @@
+<div class="clips-section">
+  <div class="title-block">
+    <h3>Clips <span class="clip-count">{{ clips().length }}</span></h3>
+  </div>
+  <hr />
+
+  <!-- Add a clip from a pasted URL (TikTok, Instagram, YouTube, ...) -->
+  <form class="clip-add" (ngSubmit)="downloadClip()">
+    <input
+      type="url"
+      name="clipUrl"
+      class="clip-url-input"
+      placeholder="Paste a clip URL (TikTok, Instagram, YouTube, ...)"
+      [(ngModel)]="clipUrl"
+      [disabled]="isDownloading()"
+    />
+    <button type="submit" class="action-button" [disabled]="isDownloading()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" class="btn-icon">
+        <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+      </svg>
+      Download
+    </button>
+  </form>
+
+  @if (clips().length > 0) {
+    <div class="clips-list">
+      @for (clip of clips(); track clip.id) {
+        <div class="clip-card">
+          <div class="clip-main">
+            <div class="clip-info">
+              <h4 class="clip-title">{{ clip.file_name }}</h4>
+              <div class="clip-meta">
+                <span class="meta-item">#{{ clip.clip_number }}</span>
+                @if (clip.source && clip.source !== 'unknown') {
+                  <span class="meta-separator">•</span>
+                  <span class="meta-item source-badge">{{ clip.source }}</span>
+                }
+                @if (clip.resolution) {
+                  <span class="meta-separator">•</span>
+                  <span class="meta-item">{{ clip.resolution }}p</span>
+                }
+                <span class="meta-separator">•</span>
+                <span class="meta-item">{{ clip.size | fileSize }}</span>
+                @if (clip.duration) {
+                  <span class="meta-separator">•</span>
+                  <span class="meta-item">{{ clip.duration | durationSecondsConvert }}</span>
+                }
+              </div>
+              <div class="clip-date">Added: {{ clip.downloaded_at | date }}</div>
+            </div>
+          </div>
+          <div class="clip-actions">
+            <a [href]="clip.url" target="_blank" rel="noopener" class="clip-link" title="Open source URL">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z" />
+              </svg>
+            </a>
+            <button type="button" class="icononly-button danger" (click)="deleteClip(clip)" title="Delete clip">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (!isLoading()) {
+    <div class="no-clips">
+      <p>No clips yet. Paste a URL above to download one.</p>
+    </div>
+  }
+</div>

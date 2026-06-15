@@ -277,6 +277,10 @@
   <div class="media-details-container">
     <media-downloads [downloads]="selectedMedia_.downloads"></media-downloads>
   </div>
+  <!-- Show Media Clips -->
+  <div class="media-details-container">
+    <media-clips [mediaId]="mediaId()"></media-clips>
+  </div>
   <!-- Show Media Files -->
   <div class="media-details-container">
     <media-files [mediaId]="mediaId()"></media-files>

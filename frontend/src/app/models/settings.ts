@@ -2,6 +2,7 @@ export interface Settings {
   api_key: string;
   app_data_dir: string;
   app_mode: string;
+  clips_dir: string;
   app_theme: string;
   delete_corrupted_trailers: boolean;
   delete_trailer_connection: boolean;
