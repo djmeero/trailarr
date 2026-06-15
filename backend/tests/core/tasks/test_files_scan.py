@@ -379,9 +379,12 @@ class TestScanMediaFolder:
         mock_trailer_update.assert_called_once_with(media.id, True)
 
     @pytest.mark.asyncio
-    async def test_stale_trailer_exists_not_corrected_when_monitored(self):
-        """When monitor=True, trailer_exists is NOT corrected upward even if trailers
-        exist on disk — the download task may still be working through other profiles."""
+    async def test_stale_trailer_exists_corrected_when_monitored_and_preexisting(self):
+        """When monitor=True but the on-disk trailer pre-dates this scan
+        (already a download record, so new_count == 0), the stale trailer_exists
+        flag IS corrected upward. This is the recovery path for issue #591: a
+        media monitored in the *arr (monitor permanently True) whose flag got
+        transiently reset must not be re-downloaded forever."""
         existing_dl = SimpleNamespace(path="/media/Test Movie (2025)/Test Movie-trailer.mkv", file_exists=True)
         media = make_mock_media(trailer_exists=False, monitor=True, downloads=[existing_dl])
         trailer_path = existing_dl.path
@@ -400,9 +403,10 @@ class TestScanMediaFolder:
         ):
             new, missing = await scan_media_folder(media, scanner=mock_scanner)
 
-        # Flag must NOT be corrected while monitor=True
-        mock_trailer_update.assert_not_called()
+        # No new download this scan — the file pre-existed — so the stale flag
+        # is reconciled even though monitor=True.
         assert new == 0
+        mock_trailer_update.assert_called_once_with(media.id, True)
 
     @pytest.mark.asyncio
     async def test_new_trailer_found_while_monitored_records_but_skips_flag(self):
@@ -435,3 +439,70 @@ class TestScanMediaFolder:
         assert new == 1
         # But flag must NOT be flipped while monitor=True
         mock_trailer_update.assert_not_called()
+
+
+class TestFolderGoneCircuitBreaker:
+    """Tests for the mass-folder-gone circuit breaker (issue #591, fix B)."""
+
+    @pytest.mark.asyncio
+    async def test_sink_defers_reset_instead_of_clearing(self):
+        """With a folder_gone_sink, a gone folder is appended to the sink and
+        NOT reset immediately (the batch breaker decides later)."""
+        media = make_mock_media(trailer_exists=True, media_exists=True)
+        sink: list = []
+        mock_scanner = MagicMock()
+        mock_scanner.get_folder_files = AsyncMock(return_value=None)
+
+        with (
+            patch(
+                "core.tasks.files_scan.media_manager.update_trailer_exists"
+            ) as mock_trailer,
+            patch(
+                "core.tasks.files_scan.media_manager.update_media_exists"
+            ) as mock_media,
+        ):
+            new, missing = await scan_media_folder(
+                media, scanner=mock_scanner, folder_gone_sink=sink
+            )
+
+        assert (new, missing) == (0, 0)
+        assert sink == [media]
+        mock_trailer.assert_not_called()
+        mock_media.assert_not_called()
+
+    def test_apply_resets_when_few_gone(self):
+        """A small number of gone folders (real deletions) are reset."""
+        from core.tasks.files_scan import _apply_folder_gone_resets
+
+        gone = [make_mock_media(media_id=i, trailer_exists=True) for i in range(3)]
+        with patch(
+            "core.tasks.files_scan.media_manager.update_trailer_exists"
+        ) as mock_trailer:
+            _apply_folder_gone_resets(gone, media_count=1000)
+
+        assert mock_trailer.call_count == 3
+
+    def test_skip_resets_on_mass_outage(self):
+        """A large fraction gone at once trips the breaker — no resets applied."""
+        from core.tasks.files_scan import _apply_folder_gone_resets
+
+        gone = [make_mock_media(media_id=i, trailer_exists=True) for i in range(500)]
+        with patch(
+            "core.tasks.files_scan.media_manager.update_trailer_exists"
+        ) as mock_trailer:
+            _apply_folder_gone_resets(gone, media_count=1000)
+
+        mock_trailer.assert_not_called()
+
+    def test_small_library_all_deleted_still_resets(self):
+        """Below the absolute floor, resets apply even at a high fraction
+        (a 5-movie library with a couple genuinely deleted)."""
+        from core.tasks.files_scan import _apply_folder_gone_resets
+
+        gone = [make_mock_media(media_id=i, trailer_exists=True) for i in range(3)]
+        with patch(
+            "core.tasks.files_scan.media_manager.update_trailer_exists"
+        ) as mock_trailer:
+            _apply_folder_gone_resets(gone, media_count=5)
+
+        assert mock_trailer.call_count == 3

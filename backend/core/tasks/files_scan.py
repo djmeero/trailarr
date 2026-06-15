@@ -55,12 +55,50 @@ def _has_folder_changed(folder_path: str, media_id: int, tz) -> bool:
     return False
 
 
+# Folder-gone circuit breaker thresholds. A transient storage/mount outage can
+# make a large fraction of media folders momentarily unreadable in a single
+# scan. Resetting trailer_exists/media_exists for all of them triggers a
+# re-download storm on recovery (issue #591), so a mass folder-gone event is
+# treated as infrastructure trouble and the resets are skipped.
+GONE_RESET_ABSOLUTE_FLOOR = 10
+GONE_RESET_FRACTION = 0.2
+
+
 def _handle_folder_gone(media: MediaRead) -> None:
     """Reset stale flags when the media folder is inaccessible or deleted."""
     if media.trailer_exists:
         media_manager.update_trailer_exists(media.id, False)
     if media.media_exists:
         media_manager.update_media_exists(media.id, False)
+
+
+def _apply_folder_gone_resets(
+    gone: list[MediaRead], media_count: int
+) -> None:
+    """Apply deferred folder-gone resets unless a mass outage is detected.
+
+    When only a few folders are gone (real deletions) the resets are applied.
+    When a large fraction are gone at once — overwhelmingly a storage/mount
+    outage, not real deletions — the resets are skipped and a warning is logged,
+    so recovery doesn't trigger a re-download storm.
+    """
+    if not gone:
+        return
+    if (
+        len(gone) >= GONE_RESET_ABSOLUTE_FLOOR
+        and media_count > 0
+        and len(gone) > GONE_RESET_FRACTION * media_count
+    ):
+        logger.warning(
+            f"Folder-gone circuit breaker tripped: {len(gone)}/{media_count}"
+            " media folders were unreadable in this scan — likely a"
+            " storage/mount outage, not real deletions. Skipping"
+            " trailer_exists/media_exists resets to avoid a re-download storm."
+            " Check your storage mount."
+        )
+        return
+    for media in gone:
+        _handle_folder_gone(media)
 
 
 async def _process_trailer_changes(
@@ -125,15 +163,25 @@ async def _process_trailer_changes(
         # No trailers on disk but flag is True → reset
         media.trailer_exists = False
         media_manager.update_trailer_exists(media.id, False)
-    elif trailer_paths and not media.trailer_exists and not media.monitor:
-        # Trailers exist on disk but flag is stale False.
-        # Guard: skip when monitor=True — the download task may still be working
-        # through remaining profiles (e.g. a stop_monitoring=False profile ran
-        # first; a higher-priority profile is still pending). Setting
-        # trailer_exists=True would also force monitor=False and prevent those
-        # profiles from running.
-        media.trailer_exists = True
-        media_manager.update_trailer_exists(media.id, True)
+    elif trailer_paths and not media.trailer_exists:
+        # Trailers exist on disk but the flag is a stale False.
+        #
+        # The monitor=True guard normally protects an in-progress multi-profile
+        # download chain (a stop_monitoring=False profile just produced a file
+        # while a higher-priority profile is still pending) — setting
+        # trailer_exists=True would force monitor=False and cut that chain short.
+        #
+        # But that guard only makes sense when a download just happened this
+        # scan (new_count > 0). When new_count == 0 the on-disk trailer(s)
+        # pre-date this scan, so no chain is running — the flag is simply stale
+        # and must be reconciled even while monitor=True. Otherwise a media that
+        # is monitored in the *arr (monitor stays permanently True) whose
+        # trailer_exists got transiently reset (e.g. a network-mount blip) is
+        # re-downloaded on every cycle, forever, accumulating duplicates.
+        # See https://github.com/nandyalu/trailarr/issues/591.
+        if not media.monitor or new_count == 0:
+            media.trailer_exists = True
+            media_manager.update_trailer_exists(media.id, True)
 
     return new_count, missing_count
 
@@ -142,6 +190,7 @@ async def scan_media_folder(
     media: MediaRead,
     scanner: MediaScanner | None = None,
     user_initiated: bool = True,
+    folder_gone_sink: list[MediaRead] | None = None,
 ) -> tuple[int, int]:
     """Scan the media folder to find media files and trailers \
         and update the database with download records.
@@ -149,6 +198,11 @@ async def scan_media_folder(
         media (MediaRead): The media item to scan.
         scanner (MediaScanner | None): Optional scanner instance to use.
         user_initiated (bool): When False, skips scan if folder is unchanged.
+        folder_gone_sink (list[MediaRead] | None): When provided, a media whose
+            folder is unreadable is appended here instead of being reset
+            immediately, so the batch scan can apply a mass-outage circuit
+            breaker before resetting flags. When None (single-item rescan),
+            the reset is applied immediately.
     Returns:
         tuple[int, int]: Number of new trailer files found and missing trailers.
     """
@@ -166,7 +220,12 @@ async def scan_media_folder(
 
     files_info = await scanner.get_folder_files(media.folder_path, media.id)
     if not files_info:
-        _handle_folder_gone(media)
+        # Folder unreadable/empty. Defer the reset to the batch circuit breaker
+        # when scanning all media; reset immediately for single-item rescans.
+        if folder_gone_sink is not None:
+            folder_gone_sink.append(media)
+        else:
+            _handle_folder_gone(media)
         return 0, 0
 
     files_manager.update(media, files_info)
@@ -207,6 +266,7 @@ async def scan_all_media_folders(
     media_count = 0
     new_trailers = 0
     missing_trailers = 0
+    folder_gone: list[MediaRead] = []
     for media in all_media():
         if _stop_event and _stop_event.is_set():
             logger.info("Stop event set, terminating scan of media folders.")
@@ -215,7 +275,10 @@ async def scan_all_media_folders(
         try:
             media_count += 1
             new, missing = await scan_media_folder(
-                media, scanner, user_initiated=force_full_scan
+                media,
+                scanner,
+                user_initiated=force_full_scan,
+                folder_gone_sink=folder_gone,
             )
             new_trailers += new
             missing_trailers += missing
@@ -224,6 +287,10 @@ async def scan_all_media_folders(
                 f"Error scanning media folder for '{media.title}'"
                 f" [{media.id}]: {e}"
             )
+
+    # Apply deferred folder-gone resets, guarded by the mass-outage circuit
+    # breaker so a transient storage blip doesn't reset everything at once.
+    _apply_folder_gone_resets(folder_gone, media_count)
 
     # Auto-reset so the optimisation resumes on future scans
     if force_full_scan:
