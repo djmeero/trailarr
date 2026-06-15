@@ -4,6 +4,7 @@
 # Import all the models that are used in the application so that \
 # SQLModel can create the tables
 from core.base.database.models.base import AppSQLModel
+from core.base.database.models.clip import Clip
 from core.base.database.models.connection import Connection
 from core.base.database.models.download import Download
 from core.base.database.models.event import Event
@@ -20,6 +21,7 @@ from core.base.database.utils.engine import engine
 # relationships properly
 
 __ALL__ = [
+    Clip,
     Connection,
     Download,
     Event,
