@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import threading
@@ -259,11 +260,16 @@ async def download_clip(
         # 4. Probe metadata (best-effort)
         meta = _probe_clip(produced)
 
-        # 5. Move to final path (keep native extension if not mp4)
+        # 5. Move to final path (keep native extension if not mp4).
+        #    Use shutil.move, not os.replace — the temp dir and the clips dir
+        #    are often on different filesystems (e.g. /tmp vs a /media mount),
+        #    and os.replace fails cross-device with "Invalid cross-device link".
         ext = os.path.splitext(produced)[1].lstrip(".").lower() or "mp4"
         if ext != "mp4":
             final_path = os.path.splitext(final_path)[0] + f".{ext}"
-        os.replace(produced, final_path)
+        if os.path.exists(final_path):
+            os.remove(final_path)
+        shutil.move(produced, final_path)
 
         # 6. Insert record
         clip_create = ClipCreate(

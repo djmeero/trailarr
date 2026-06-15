@@ -186,6 +186,35 @@ async def test_download_clip_creates_record(media, tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_download_clip_moves_cross_device(media, tmp_path, monkeypatch):
+    """The final move must not rely on os.replace, which fails across
+    filesystems (temp dir vs a /media mount) with 'Invalid cross-device link'.
+    """
+    monkeypatch.setattr(clip_mod.app_settings, "clips_dir", str(tmp_path))
+
+    def _boom(*a, **k):
+        raise OSError(18, "Invalid cross-device link")
+
+    # If the code regressed to os.replace, this would surface the bug.
+    monkeypatch.setattr(clip_mod.os, "replace", _boom)
+
+    def _fake_download(url, temp_out, _stop_event=None):
+        Path(temp_out).write_bytes(b"x" * 100)
+        return {}
+
+    monkeypatch.setattr(clip_mod, "_download_clip_file", _fake_download)
+    monkeypatch.setattr(
+        clip_mod,
+        "_probe_clip",
+        lambda path: {"duration": 1, "resolution": 0, "size": 100},
+    )
+
+    result = await clip_mod.download_clip(media, "https://tiktok/x")
+    assert result is not None
+    assert Path(result.path).exists()
+
+
+@pytest.mark.asyncio
 async def test_download_clip_increments_number(media, tmp_path, monkeypatch):
     monkeypatch.setattr(clip_mod.app_settings, "clips_dir", str(tmp_path))
 
