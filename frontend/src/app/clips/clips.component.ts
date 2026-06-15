@@ -6,6 +6,7 @@ import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {catchError, of, take} from 'rxjs';
 import {DurationSecondsConvertPipe} from 'src/app/helpers/duration-seconds-pipe';
 import {FileSizePipe} from 'src/app/helpers/file-size.pipe';
+import {PlayVideoDialogComponent} from 'src/app/media/media-details/files/dialogs/play-video-dialog/play-video-dialog.component';
 import {Clip} from 'src/app/models/clip';
 import {ClipsService} from 'src/app/services/clips.service';
 import {MediaService} from 'src/app/services/media.service';
@@ -16,7 +17,7 @@ const SEARCH_STORAGE_KEY = 'TrailarrClipsSearch';
 
 @Component({
   selector: 'app-clips',
-  imports: [DatePipe, DurationSecondsConvertPipe, FileSizePipe, FormsModule, RouterLink],
+  imports: [DatePipe, DurationSecondsConvertPipe, FileSizePipe, FormsModule, RouterLink, PlayVideoDialogComponent],
   templateUrl: './clips.component.html',
   styleUrl: './clips.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,6 +34,8 @@ export class ClipsComponent implements OnInit {
   readonly clips = signal<Clip[]>([]);
   readonly isLoading = signal<boolean>(false);
   readonly search = signal<string>('');
+  /** Path of the clip currently being played (null = player closed). */
+  readonly playingPath = signal<string | null>(null);
 
   /** Map of media_id -> "Title (year)" for labelling clips by movie. */
   readonly mediaTitles = computed(() => {
@@ -95,6 +98,10 @@ export class ClipsComponent implements OnInit {
 
   mediaTitle(mediaId: number): string {
     return this.mediaTitles().get(mediaId) || `Media #${mediaId}`;
+  }
+
+  playClip(clip: Clip): void {
+    this.playingPath.set(clip.path);
   }
 
   deleteClip(clip: Clip): void {

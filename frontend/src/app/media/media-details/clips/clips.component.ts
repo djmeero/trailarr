@@ -5,13 +5,14 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {catchError, of} from 'rxjs';
 import {DurationSecondsConvertPipe} from 'src/app/helpers/duration-seconds-pipe';
 import {FileSizePipe} from 'src/app/helpers/file-size.pipe';
+import {PlayVideoDialogComponent} from 'src/app/media/media-details/files/dialogs/play-video-dialog/play-video-dialog.component';
 import {Clip} from 'src/app/models/clip';
 import {ClipsService} from 'src/app/services/clips.service';
 import {WebsocketService} from 'src/app/services/websocket.service';
 
 @Component({
   selector: 'media-clips',
-  imports: [DatePipe, DurationSecondsConvertPipe, FileSizePipe, FormsModule],
+  imports: [DatePipe, DurationSecondsConvertPipe, FileSizePipe, FormsModule, PlayVideoDialogComponent],
   templateUrl: './clips.component.html',
   styleUrl: './clips.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,6 +26,8 @@ export class ClipsComponent {
   readonly clips = signal<Clip[]>([]);
   readonly isLoading = signal<boolean>(false);
   readonly isDownloading = signal<boolean>(false);
+  /** Path of the clip currently being played (null = player closed). */
+  readonly playingPath = signal<string | null>(null);
   clipUrl = '';
 
   constructor() {
@@ -77,6 +80,10 @@ export class ClipsComponent {
         }
         this.isDownloading.set(false);
       });
+  }
+
+  playClip(clip: Clip): void {
+    this.playingPath.set(clip.path);
   }
 
   deleteClip(clip: Clip): void {
