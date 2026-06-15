@@ -261,6 +261,7 @@ class _Config:
             "api_key": self.api_key,
             "app_data_dir": APP_DATA_DIR,
             "app_mode": self.app_mode,
+            "clips_dir": self.clips_dir,
             "app_theme": self.app_theme,
             "delete_corrupted_trailers": self.delete_corrupted_trailers,
             "delete_trailer_connection": self.delete_trailer_connection,
@@ -457,6 +458,11 @@ class _Config:
     """Path to the YouTube cookies file.
         - Default is empty string.
         - Valid values are any file path."""
+
+    clips_dir = str_property("CLIPS_DIR", default="")
+    """Directory where downloaded clips are stored.
+        - Default is empty string (resolved to <APP_DATA_DIR>/clips at runtime).
+        - Valid values are any valid directory path."""
 
     gpu_available_amd = bool_property("GPU_AVAILABLE_AMD", default=False)
     """AMD GPU available for hardware acceleration (AMF).

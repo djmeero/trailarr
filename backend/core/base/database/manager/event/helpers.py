@@ -220,6 +220,62 @@ def track_trailer_deleted(
         )
 
 
+def track_clip_downloaded(
+    media_id: int,
+    url: str,
+    source: EventSource = EventSource.USER,
+    source_detail: str = "",
+) -> None:
+    """Track when a clip is downloaded for a media item. \n
+    Args:
+        media_id (int): The ID of the media item.
+        url (str): The source URL of the downloaded clip.
+        source (EventSource): The source of the event (USER or SYSTEM).
+        source_detail (str): Additional details about the source.
+    """
+    try:
+        event_create = EventCreate(
+            media_id=media_id,
+            event_type=EventType.CLIP_DOWNLOADED,
+            source=source,
+            source_detail=source_detail,
+            new_value=url,
+        )
+        create_event(event_create)
+    except Exception as e:
+        logger.warning(
+            f"Failed to track clip_downloaded event for [{media_id}]: {e}"
+        )
+
+
+def track_clip_deleted(
+    media_id: int,
+    reason: str = "",
+    source: EventSource = EventSource.USER,
+    source_detail: str = "",
+) -> None:
+    """Track when a clip is deleted for a media item. \n
+    Args:
+        media_id (int): The ID of the media item.
+        reason (str): The reason for deletion (e.g., 'user_request').
+        source (EventSource): The source of the event (USER or SYSTEM).
+        source_detail (str): Additional details about the source.
+    """
+    try:
+        event_create = EventCreate(
+            media_id=media_id,
+            event_type=EventType.CLIP_DELETED,
+            source=source,
+            source_detail=source_detail,
+            new_value=reason,
+        )
+        create_event(event_create)
+    except Exception as e:
+        logger.warning(
+            f"Failed to track clip_deleted event for [{media_id}]: {e}"
+        )
+
+
 def track_trailer_detected(
     media_id: int,
     source: EventSource = EventSource.SYSTEM,

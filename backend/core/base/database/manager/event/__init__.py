@@ -16,6 +16,8 @@ from .delete import (
 from .helpers import (
     track_arr_linked,
     track_arr_unlinked,
+    track_clip_deleted,
+    track_clip_downloaded,
     track_download_skipped,
     track_media_added,
     track_monitor_changed,
@@ -40,6 +42,8 @@ __all__ = [
     "read_by_media_id",
     "track_arr_linked",
     "track_arr_unlinked",
+    "track_clip_deleted",
+    "track_clip_downloaded",
     "track_download_skipped",
     "track_media_added",
     "track_monitor_changed",
