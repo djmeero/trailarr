@@ -224,3 +224,9 @@ frontend/typings
 .DS_Store
 Thumbs.db
 .devcontainer/devcontainer.local.jsonc
+
+# Local clip-downloader script and its artifacts (cookies.txt may be sensitive)
+make-clips.ps1
+clips.txt
+downloads.txt
+cookies.txt
