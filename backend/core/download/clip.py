@@ -6,6 +6,7 @@ import tempfile
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 from api.v1 import websockets
 from app_logger import ModuleLogger
@@ -22,6 +23,28 @@ logger = ModuleLogger("ClipsDownloader")
 YTDLP_TIMEOUT = 900  # 15 minutes
 
 _ILLEGAL = re.compile(r'[\\/:*?"<>|]')
+
+
+# -------------------------------------------------------------------
+# URL validation
+# -------------------------------------------------------------------
+
+
+def is_valid_clip_url(url: str) -> bool:
+    """Return True only for well-formed http(s) URLs.
+
+    This guards against argv flag smuggling: yt-dlp treats a leading-dash
+    positional argument (e.g. ``--exec=...``) as an option, so a hostile
+    "URL" could otherwise inject dangerous yt-dlp flags. Restricting to an
+    http(s) scheme with a host rejects those before they ever reach the
+    subprocess. The download command additionally passes ``--`` before the
+    URL as defence in depth.
+    """
+    try:
+        parsed = urlparse((url or "").strip())
+    except ValueError:
+        return False
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
 # -------------------------------------------------------------------
@@ -95,7 +118,9 @@ def _download_clip_file(
     ]
     if app_settings.yt_cookies_path:
         cmd += ["--cookies", app_settings.yt_cookies_path]
-    cmd.append(url)
+    # Terminate option parsing so the URL can never be read as a yt-dlp flag,
+    # even if validation upstream is bypassed (defence in depth).
+    cmd += ["--", url]
 
     try:
         result = subprocess.run(
@@ -199,7 +224,14 @@ async def download_clip(
 
     Returns:
         ClipRead | None: The created clip, or None if it already existed.
+    Raises:
+        DownloadFailedError: If the URL is not a valid http(s) URL.
     """
+    # 0. Reject anything that isn't a well-formed http(s) URL. Prevents argv
+    #    flag smuggling into yt-dlp (e.g. a "--exec=..." pseudo-URL).
+    if not is_valid_clip_url(url):
+        raise DownloadFailedError(f"Invalid clip URL: {url!r}")
+
     # 1. Dedup guard
     existing = clip_manager.read_by_media_url(media.id, url)
     if existing is not None:

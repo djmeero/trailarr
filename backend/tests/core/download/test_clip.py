@@ -45,6 +45,36 @@ def test_resolve_clips_dir_falls_back_to_app_data(monkeypatch):
     assert Path(resolved).name == "clips"
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.tiktok.com/@x/video/123",
+        "http://example.com/clip",
+        "https://youtu.be/abc",
+    ],
+)
+def test_is_valid_clip_url_accepts_http(url):
+    assert clip_mod.is_valid_clip_url(url) is True
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "",
+        "   ",
+        "--exec=calc.exe",
+        "-J",
+        "ftp://example.com/x",
+        "file:///etc/passwd",
+        "javascript:alert(1)",
+        "just-text",
+        "https://",  # no host
+    ],
+)
+def test_is_valid_clip_url_rejects_non_http_and_flags(url):
+    assert clip_mod.is_valid_clip_url(url) is False
+
+
 # -------------------------------------------------------------------
 # Pipeline (subprocess mocked)
 # -------------------------------------------------------------------
@@ -90,7 +120,7 @@ async def test_download_clip_dedup_skips(media, monkeypatch):
         ClipCreate(
             media_id=media.id,
             clip_number=1,
-            url="dupe",
+            url="https://tiktok/dupe",
             file_name="f.mp4",
             path="/p/f.mp4",
             size=1,
@@ -106,8 +136,25 @@ async def test_download_clip_dedup_skips(media, monkeypatch):
 
     monkeypatch.setattr(clip_mod, "_download_clip_file", _fake_download)
 
-    result = await clip_mod.download_clip(media, "dupe")
+    result = await clip_mod.download_clip(media, "https://tiktok/dupe")
     assert result is None
+    assert called["download"] is False
+
+
+@pytest.mark.asyncio
+async def test_download_clip_rejects_flag_like_url(media, monkeypatch):
+    called = {"download": False}
+
+    def _fake_download(*a, **k):
+        called["download"] = True
+        return {}
+
+    monkeypatch.setattr(clip_mod, "_download_clip_file", _fake_download)
+
+    from exceptions import DownloadFailedError
+
+    with pytest.raises(DownloadFailedError):
+        await clip_mod.download_clip(media, "--exec=calc.exe")
     assert called["download"] is False
 
 

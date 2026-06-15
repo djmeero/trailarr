@@ -4,7 +4,7 @@ from app_logger import ModuleLogger
 from config.logging_context import with_logging_context
 import core.base.database.manager.media as media_manager
 from core.base.database.models.media import MediaRead
-from core.download.clip import download_clip
+from core.download.clip import download_clip, is_valid_clip_url
 from core.tasks import scheduler
 from exceptions import InvalidResponseError
 
@@ -39,6 +39,10 @@ def download_clip_by_id(media_id: int, url: str) -> str:
     url = (url or "").strip()
     if not url:
         raise InvalidResponseError("A clip URL is required")
+    # Reject non-http(s) URLs before scheduling — prevents argv flag smuggling
+    # into yt-dlp (e.g. a "--exec=..." pseudo-URL).
+    if not is_valid_clip_url(url):
+        raise InvalidResponseError("A valid http(s) clip URL is required")
 
     # Raises ItemNotFoundError if the media does not exist
     media = media_manager.read(media_id)

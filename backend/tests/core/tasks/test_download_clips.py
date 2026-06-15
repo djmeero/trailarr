@@ -67,6 +67,17 @@ def test_download_clip_by_id_rejects_blank_url(media):
         download_clips.download_clip_by_id(media.id, "   ")
 
 
+@pytest.mark.parametrize("url", ["--exec=calc.exe", "-J", "file:///etc/passwd", "ftp://x/y", "notaurl"])
+def test_download_clip_by_id_rejects_non_http_urls(media, url, monkeypatch):
+    # Should reject before scheduling — add_task must never be called.
+    def _fail_add_task(**kwargs):
+        raise AssertionError("scheduler.add_task should not be called")
+
+    monkeypatch.setattr(download_clips.scheduler, "add_task", _fail_add_task)
+    with pytest.raises(InvalidResponseError):
+        download_clips.download_clip_by_id(media.id, url)
+
+
 def test_download_clip_by_id_unknown_media():
     with pytest.raises(ItemNotFoundError):
         download_clips.download_clip_by_id(999999, "https://tiktok/x")
