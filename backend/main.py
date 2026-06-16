@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 import shutil
@@ -32,6 +33,17 @@ logging = ModuleLogger("Main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Before startup
+    # Bind the running (main) event loop so background broadcasts originating
+    # from scheduler worker threads are routed here instead of awaiting a
+    # cross-loop websocket send (which hangs the worker and exhausts the
+    # scheduler thread pool — see api/v1/websockets.py).
+    main_loop = asyncio.get_running_loop()
+    ws_manager.bind_loop(main_loop)
+    # Give the scheduler the main loop too, so Quiv dispatches its async job
+    # event listeners via run_coroutine_threadsafe (non-blocking) instead of
+    # blocking a worker thread in a temporary event loop.
+    scheduler._main_loop = main_loop
+
     # Schedule all tasks
     logging.debug("Scheduling tasks")
     schedule_all_tasks()
